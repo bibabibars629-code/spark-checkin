@@ -2,150 +2,251 @@
 <html lang="zh">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>火花签到 · 好友互签</title>
 <style>
-  body { font-family: 'Microsoft YaHei', Arial, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; min-height:100vh; display:flex; justify-content:center; padding:24px; box-sizing:border-box; }
-  .wrap { width:100%; max-width:520px; }
-  .card { background:#1e293b; border-radius:16px; padding:22px; margin-bottom:16px; box-shadow:0 8px 24px rgba(0,0,0,.3); }
-  h1 { margin:0 0 4px; font-size:22px; color:#fbbf24; }
-  .sub { color:#94a3b8; font-size:13px; margin-bottom:16px; }
-  input { width:100%; box-sizing:border-box; padding:11px 12px; margin-bottom:10px; border:1px solid #334155; border-radius:10px; background:#0f172a; color:#e2e8f0; font-size:14px; }
-  button { width:100%; padding:12px; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
-  .primary { background:#fbbf24; color:#0f172a; }
-  .primary:hover { background:#f59e0b; }
-  .ghost { background:#334155; color:#e2e8f0; }
-  .friend { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:14px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
-  .spark-on { color:#fbbf24; font-weight:700; font-size:18px; }
-  .spark-off { color:#64748b; font-size:18px; }
-  .broken { color:#f87171; font-size:13px; }
-  .msg { margin-top:10px; font-size:13px; min-height:18px; }
-  .ok { color:#4ade80; } .err { color:#f87171; }
-  .tag { font-size:12px; color:#94a3b8; }
-  a { color:#93c5fd; cursor:pointer; font-size:13px; }
+  :root{
+    --bg1:#0b1220; --bg2:#0f1d33; --card:#151f33; --card2:#1b2942;
+    --line:#24334d; --txt:#e7edf7; --sub:#8fa3c0;
+    --amber:#ffb02e; --amber2:#ff7a2e; --green:#34d399; --red:#fb7185;
+    --blue:#38bdf8; --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,Arial,sans-serif;
+    background:radial-gradient(1200px 700px at 20% -10%,#1a2c4d 0%,var(--bg1) 55%),var(--bg1);
+    color:var(--txt);min-height:100vh;display:flex;justify-content:center;padding:16px;}
+  .wrap{width:100%;max-width:520px;position:relative;}
+  .hero{text-align:center;padding:22px 8px 16px;}
+  .hero h1{font-size:26px;margin:0 0 6px;background:linear-gradient(90deg,var(--amber),var(--amber2),var(--red));
+    -webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:1px;}
+  .hero .flame{font-size:30px;display:inline-block;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.18);opacity:.85;}}
+  .hero p{margin:0;color:var(--sub);font-size:13px;line-height:1.6;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;
+    box-shadow:var(--shadow);margin-bottom:14px;}
+  input{width:100%;padding:13px 14px;margin-bottom:11px;border:1px solid var(--line);border-radius:12px;
+    background:#0d1524;color:var(--txt);font-size:15px;outline:none;transition:.2s;}
+  input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,176,46,.15);}
+  .btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:transform .1s,filter .2s;}
+  .btn:active{transform:scale(.98);}
+  .primary{background:linear-gradient(90deg,var(--amber),var(--amber2));color:#1a1205;}
+  .ghost{background:var(--card2);color:var(--txt);margin-top:9px;}
+  .msg{margin-top:10px;font-size:13px;min-height:18px;text-align:center;}
+  .ok{color:var(--green);} .err{color:var(--red);}
+  .who{margin-bottom:4px;font-size:17px;font-weight:700;}
+  .uname{color:var(--sub);font-size:12px;}
+  .checkin-btn{background:linear-gradient(90deg,#10b981,#34d399);color:#04140d;margin-top:12px;}
+  .checkin-btn.done{background:var(--card2);color:var(--sub);}
+  .section-title{font-size:12px;color:var(--sub);letter-spacing:1px;margin:18px 0 10px;font-weight:600;}
+  /* 好友卡片 */
+  .fcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-bottom:11px;}
+  .fhead{display:flex;align-items:center;gap:11px;}
+  .avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:18px;color:#fff;flex:none;
+    background:linear-gradient(135deg,var(--blue),var(--amber2));}
+  .fname{font-weight:700;font-size:15px;}
+  .fuser{color:var(--sub);font-size:11px;}
+  .spark{margin-left:auto;text-align:right;font-size:17px;font-weight:700;}
+  .spark-on{color:var(--amber);} .spark-off{color:#5c6c85;} .spark-broken{color:var(--red);font-size:13px;}
+  .fstatus{font-size:12px;color:var(--sub);margin-top:5px;}
+  .fstatus b{color:var(--txt);}
+  .remind{background:linear-gradient(90deg,rgba(255,176,46,.14),rgba(255,122,46,.10));
+    border:1px solid rgba(255,176,46,.4);color:#ffce85;border-radius:11px;padding:9px 11px;
+    font-size:12.5px;margin-top:10px;display:flex;align-items:center;gap:8px;}
+  .remind.danger{background:linear-gradient(90deg,rgba(251,113,133,.14),rgba(251,113,133,.08));
+    border-color:rgba(251,113,133,.4);color:#fda4af;}
+  .remind button{flex:none;border:none;background:linear-gradient(90deg,var(--amber),var(--amber2));color:#1a1205;
+    border-radius:9px;padding:7px 13px;font-weight:700;font-size:12.5px;cursor:pointer;}
+  /* 表情区 */
+  .emoji-zone{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;}
+  .emojis-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:28px;}
+  .e-chat{display:inline-flex;align-items:center;gap:5px;background:var(--card2);border-radius:20px;
+    padding:4px 9px;font-size:17px;position:relative;}
+  .e-chat .dir{font-size:11px;color:var(--sub);}
+  .e-chat.newest{outline:2px solid rgba(255,176,46,.6);}
+  .emoji-btn{flex:none;border:1px solid var(--line);background:var(--card2);border-radius:12px;
+    width:38px;height:38px;font-size:19px;cursor:pointer;transition:.15s;}
+  .emoji-btn:active{transform:scale(.92);}
+  .emoji-panel{display:none;flex-wrap:wrap;gap:7px;background:var(--card2);border:1px solid var(--line);
+    border-radius:13px;padding:11px;margin-top:9px;}
+  .emoji-panel.show{display:flex;}
+  .emoji-panel button{border:none;background:none;font-size:24px;cursor:pointer;width:44px;height:44px;
+    border-radius:10px;transition:.12s;}
+  .emoji-panel button:active{background:#2b3b5c;transform:scale(1.08);}
+  .tip{font-size:11px;color:var(--sub);margin-top:6px;}
+  .hr{border:none;border-top:1px solid var(--line);margin:14px 0;}
+  .empty{color:#5c6c85;font-size:13px;text-align:center;padding:8px 0;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="card">
-    <h1>🔥 火花签到</h1>
-    <div class="sub">和好友互签，连续共同打卡攒火花；超过7天没互签，火花就断了</div>
+  <div class="hero">
+    <div><span class="flame">🔥</span></div>
+    <h1>火花签到</h1>
+    <p>和好友互签，连续共同打卡攒火花<br>超过 7 天没互签，火花就断了</p>
   </div>
 
-  <!-- 未登录：注册/登录 -->
+  <!-- 未登录 -->
   <div class="card" id="authBox">
     <input id="username" placeholder="用户名（登录用，小写字母/数字）">
     <input id="name" placeholder="昵称（好友看到的称呼，可填化名）">
     <input id="password" type="password" placeholder="密码（至少4位）">
-    <button class="primary" onclick="register()">注册并开始</button>
-    <button class="ghost" style="margin-top:8px" onclick="login()">已有账号？登录</button>
+    <button class="btn primary" onclick="register()">注册并开始</button>
+    <button class="btn ghost" onclick="login()">已有账号？登录</button>
     <div class="msg" id="authMsg"></div>
   </div>
 
-  <!-- 已登录：主页 -->
+  <!-- 已登录 -->
   <div class="card" id="mainBox" style="display:none">
-    <div>你好，<b id="whoami"></b> <span class="tag" id="uname"></span></div>
-    <button class="primary" style="margin-top:12px" onclick="checkin()">今日签到 ✅</button>
+    <div class="who">你好，<b id="whoami"></b></div>
+    <div class="uname" id="uname"></div>
+    <button class="btn checkin-btn" id="checkinBtn" onclick="checkin()">今日签到 ✅</button>
     <div class="msg" id="checkinMsg"></div>
-    <hr style="border-color:#334155;margin:16px 0">
+    <hr class="hr">
     <div style="display:flex;gap:8px">
       <input id="friendName" placeholder="输对方用户名加好友" style="margin:0">
-      <button class="ghost" style="width:120px;flex:none" onclick="addFriend()">加好友</button>
+      <button class="btn ghost" style="width:112px;flex:none;padding:12px" onclick="addFriend()">加好友</button>
     </div>
     <div class="msg" id="friendMsg"></div>
   </div>
 
-  <!-- 好友与火花列表 -->
+  <div class="section-title" id="listTitle">· 好友与火花 ·</div>
   <div id="friendList"></div>
 </div>
 
 <script>
 const API = '';
 let token = localStorage.getItem('spark_token') || '';
+const EMOJIS = ['🔥','💪','🎯','❤️','😤','🙏','⚡','🎉','👀','🍀'];
 
-function tz() { return new Date().getTimezoneOffset(); }
+function tz(){ return new Date().getTimezoneOffset(); }
 
 async function call(url, method, payload) {
   let target = API + url;
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
-  if (method === 'GET') {
-    target += (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
-  } else {
-    opts.body = JSON.stringify({ ...(payload || {}), token });
-  }
+  if (method === 'GET') target += (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
+  else opts.body = JSON.stringify({ ...(payload || {}), token });
   const r = await fetch(target, opts);
   return await r.json();
 }
 
-function setMsg(el, text, ok) {
-  el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err');
+function setMsg(el, text, ok){ el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); }
+
+async function register(){
+  const m = document.getElementById('authMsg');
+  const r = await call('/api/register','POST',{ username:document.getElementById('username').value,
+    name:document.getElementById('name').value, password:document.getElementById('password').value, tzOffsetMin:tz() });
+  if (r.token){ token=r.token; localStorage.setItem('spark_token',token); enter(r.user); } else setMsg(m,r.error,false);
+}
+async function login(){
+  const m = document.getElementById('authMsg');
+  const r = await call('/api/login','POST',{ username:document.getElementById('username').value,
+    password:document.getElementById('password').value });
+  if (r.token){ token=r.token; localStorage.setItem('spark_token',token); enter(r.user); } else setMsg(m,r.error,false);
 }
 
-async function register() {
-  const msg = document.getElementById('authMsg');
-  const r = await call('/api/register', 'POST', {
-    username: document.getElementById('username').value,
-    name: document.getElementById('name').value,
-    password: document.getElementById('password').value,
-    tzOffsetMin: tz(),
-  });
-  if (r.token) { token = r.token; localStorage.setItem('spark_token', token); enter(r.user); }
-  else setMsg(msg, r.error, false);
-}
-async function login() {
-  const msg = document.getElementById('authMsg');
-  const r = await call('/api/login', 'POST', {
-    username: document.getElementById('username').value,
-    password: document.getElementById('password').value,
-  });
-  if (r.token) { token = r.token; localStorage.setItem('spark_token', token); enter(r.user); }
-  else setMsg(msg, r.error, false);
-}
-
-function enter(user) {
-  document.getElementById('authBox').style.display = 'none';
-  document.getElementById('mainBox').style.display = 'block';
-  document.getElementById('whoami').textContent = user.name;
-  document.getElementById('uname').textContent = '@' + user.username;
+function enter(user){
+  document.getElementById('authBox').style.display='none';
+  document.getElementById('mainBox').style.display='block';
+  document.getElementById('whoami').textContent=user.name;
+  document.getElementById('uname').textContent='@'+user.username;
   refresh();
 }
 
-async function checkin() {
-  const msg = document.getElementById('checkinMsg');
-  const r = await call('/api/checkin', 'POST', { tzOffsetMin: tz() });
-  if (r.ok) { setMsg(msg, '✅ 今天签到了，别忘明天继续！', true); refresh(); }
-  else setMsg(msg, r.error, false);
+async function checkin(){
+  const m = document.getElementById('checkinMsg');
+  const r = await call('/api/checkin','POST',{ tzOffsetMin:tz() });
+  if (r.ok) setMsg(m,'✅ 今天签到了，别忘明天继续！',true);
+  else setMsg(m,r.error,false);
+  refresh();
 }
 
-async function addFriend() {
-  const msg = document.getElementById('friendMsg');
-  const r = await call('/api/friend', 'POST', { username: document.getElementById('friendName').value });
-  setMsg(msg, r.ok ? '✅ 加好友成功' : r.error, !!r.ok);
-  if (r.ok) { document.getElementById('friendName').value = ''; refresh(); }
+async function addFriend(){
+  const m = document.getElementById('friendMsg');
+  const r = await call('/api/friend','POST',{ username:document.getElementById('friendName').value });
+  setMsg(m, r.ok ? '✅ 加好友成功' : r.error, !!r.ok);
+  if (r.ok){ document.getElementById('friendName').value=''; refresh(); }
 }
 
-async function refresh() {
-  const r = await call('/api/me', 'GET');
-  if (r.error) { token = ''; localStorage.removeItem('spark_token'); location.reload(); return; }
-  const box = document.getElementById('friendList');
-  const todayDone = r.friends.some(f => f.todayChecked) || r.friends.length === 0;
-  box.innerHTML = '<div class="card"><div class="sub">你的好友 · 火花状态（共' + r.friends.length + '位）</div>' +
-    r.friends.map(f => {
-      let line;
-      if (f.broken) line = '<span class="broken">💔 已断签 · 重新开始</span>';
-      else if (f.sparkDays > 0) line = '<span class="spark-on">🔥 ' + f.sparkDays + ' 天</span> <span class="tag">持续共同打卡</span>';
-      else line = '<span class="spark-off">· 还没有火花 ·</span>';
-      return '<div class="friend"><div><div><b>' + f.name + '</b> <span class="tag">@' + f.username + '</span></div>' +
-        '<div class="tag" style="margin-top:2px">' + (f.todayChecked ? '你今天已签 ✅' : '今天还没签 ⏳') + '</div></div><div>' + line + '</div></div>';
-    }).join('') +
-    (r.friends.length === 0 ? '<div class="tag">还没有好友，加一个一起攒火花吧</div>' : '') +
-    '</div>';
+async function sendEmoji(friendId, emoji, btnId){
+  const r = await call('/api/emoji','POST',{ friendId, emoji });
+  if (r.ok){ closePanel(btnId); refresh(); }
+  else alert(r.error || '发送失败');
+}
+function togglePanel(btnId){
+  const p = document.getElementById('panel-'+btnId);
+  const was = p.classList.contains('show');
+  document.querySelectorAll('.emoji-panel.show').forEach(x=>x.classList.remove('show'));
+  if(!was) p.classList.add('show');
+}
+function closePanel(btnId){ const p=document.getElementById('panel-'+btnId); if(p) p.classList.remove('show'); }
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function refresh(){
+  call('/api/me','GET').then(r => {
+    if (r.error){ token=''; localStorage.removeItem('spark_token'); location.reload(); return; }
+    // 签到按钮状态
+    const myChecked = r.friends.length ? r.friends[0].todayChecked : false;
+    const btn = document.getElementById('checkinBtn');
+    btn.textContent = myChecked ? '✅ 今天已签到' : '今日签到 ✅';
+    btn.classList.toggle('done', myChecked);
+
+    const box = document.getElementById('friendList');
+    box.innerHTML = r.friends.map(f => {
+      // 火花行
+      let sparkHtml;
+      if (f.broken) sparkHtml = '<div class="spark spark-broken">💔 已断签</div>';
+      else if (f.sparkDays>0) sparkHtml = '<div class="spark spark-on">🔥 '+f.sparkDays+' 天</div>';
+      else sparkHtml = '<div class="spark spark-off">· 无火花 ·</div>';
+
+      // 双方签到状态
+      const meSt = f.todayChecked ? '我✓' : '我✗';
+      const heSt = f.otherTodayChecked ? 'TA✓' : 'TA✗';
+
+      // 提醒逻辑
+      let remind = '';
+      if (f.sparkDays>0 && !f.otherTodayChecked && !f.todayChecked){
+        remind = '<div class="remind danger">⚠️ 再不断签就没了！快去催TA签到，自己也签了保住火花</div>';
+      } else if (f.sparkDays>0 && !f.otherTodayChecked){
+        remind = '<div class="remind">🔥 加把劲，TA今天还没签，发个表情催催TA<button onclick="sendEmoji(\''+f.id+'\',\'🔥\',\'x\')">催TA</button></div>';
+      } else if (!f.todayChecked){
+        remind = '<div class="remind">⏰ 你今天还没签到，签了才能和TA一起攒火花</div>';
+      }
+
+      // 表情聊天条（下方 buildEmojiChat 渲染）
+      return '<div class="fcard">'
+        + '<div class="fhead">'
+        +   '<div class="avatar">'+esc(f.name.slice(0,1))+'</div>'
+        +   '<div><div class="fname">'+esc(f.name)+'</div><div class="fuser">@'+esc(f.username)+'</div></div>'
+        +   sparkHtml
+        + '</div>'
+        + '<div class="fstatus">今日 · 我 '+meSt+' ｜ '+heSt+'</div>'
+        + remind
+        + '<div class="emoji-zone">'
+        +   '<div class="emojis-row">'+ buildEmojiChat(f) +'<button class="emoji-btn" id="btn-'+f.id+'" onclick="togglePanel(\''+f.id+'\')">😀</button></div>'
+        +   '<div class="emoji-panel" id="panel-'+f.id+'">'+ EMOJIS.map(e=>'<button onclick="sendEmoji(\''+f.id+'\',\''+e+'\',\''+f.id+'\')">'+e+'</button>').join('') +'</div>'
+        + '</div>'
+        + '</div>';
+    }).join('') || '<div class="empty">还没有好友，加一个一起攒火花吧 ✨</div>';
+    document.getElementById('listTitle').style.display = r.friends.length ? '' : 'none';
+  });
 }
 
-// 已有 token 自动登录
-if (token) {
-  (async () => {
-    const r = await call('/api/me', 'GET');
+// 构造表情聊天展示（对方发来的带"TA"标注，最新一条高亮）
+function buildEmojiChat(f){
+  const emojis = f.emojis || [];
+  return emojis.map((e, idx) => {
+    const fromMe = e.from === f.id ? false : true; // from=好友id → 是TA发的；否则是我发的
+    const dir = fromMe ? 'TA' : '我';
+    const cls = idx === 0 ? 'e-chat newest' : 'e-chat';
+    return '<span class="'+cls+'"><span class="dir">'+dir+'</span>'+esc(e.emoji)+'</span>';
+  }).join('');
+}
+
+if (token){
+  (async()=>{
+    const r = await call('/api/me','GET');
     if (r.user) enter(r.user); else { token=''; localStorage.removeItem('spark_token'); }
   })();
 }
