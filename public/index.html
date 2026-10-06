@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>火花签到 · 好友互签</title>
+<style>
+  body { font-family: 'Microsoft YaHei', Arial, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; min-height:100vh; display:flex; justify-content:center; padding:24px; box-sizing:border-box; }
+  .wrap { width:100%; max-width:520px; }
+  .card { background:#1e293b; border-radius:16px; padding:22px; margin-bottom:16px; box-shadow:0 8px 24px rgba(0,0,0,.3); }
+  h1 { margin:0 0 4px; font-size:22px; color:#fbbf24; }
+  .sub { color:#94a3b8; font-size:13px; margin-bottom:16px; }
+  input { width:100%; box-sizing:border-box; padding:11px 12px; margin-bottom:10px; border:1px solid #334155; border-radius:10px; background:#0f172a; color:#e2e8f0; font-size:14px; }
+  button { width:100%; padding:12px; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+  .primary { background:#fbbf24; color:#0f172a; }
+  .primary:hover { background:#f59e0b; }
+  .ghost { background:#334155; color:#e2e8f0; }
+  .friend { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:14px 16px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .spark-on { color:#fbbf24; font-weight:700; font-size:18px; }
+  .spark-off { color:#64748b; font-size:18px; }
+  .broken { color:#f87171; font-size:13px; }
+  .msg { margin-top:10px; font-size:13px; min-height:18px; }
+  .ok { color:#4ade80; } .err { color:#f87171; }
+  .tag { font-size:12px; color:#94a3b8; }
+  a { color:#93c5fd; cursor:pointer; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>🔥 火花签到</h1>
+    <div class="sub">和好友互签，连续共同打卡攒火花；超过7天没互签，火花就断了</div>
+  </div>
+
+  <!-- 未登录：注册/登录 -->
+  <div class="card" id="authBox">
+    <input id="username" placeholder="用户名（登录用，小写字母/数字）">
+    <input id="name" placeholder="昵称（好友看到的称呼，可填化名）">
+    <input id="password" type="password" placeholder="密码（至少4位）">
+    <button class="primary" onclick="register()">注册并开始</button>
+    <button class="ghost" style="margin-top:8px" onclick="login()">已有账号？登录</button>
+    <div class="msg" id="authMsg"></div>
+  </div>
+
+  <!-- 已登录：主页 -->
+  <div class="card" id="mainBox" style="display:none">
+    <div>你好，<b id="whoami"></b> <span class="tag" id="uname"></span></div>
+    <button class="primary" style="margin-top:12px" onclick="checkin()">今日签到 ✅</button>
+    <div class="msg" id="checkinMsg"></div>
+    <hr style="border-color:#334155;margin:16px 0">
+    <div style="display:flex;gap:8px">
+      <input id="friendName" placeholder="输对方用户名加好友" style="margin:0">
+      <button class="ghost" style="width:120px;flex:none" onclick="addFriend()">加好友</button>
+    </div>
+    <div class="msg" id="friendMsg"></div>
+  </div>
+
+  <!-- 好友与火花列表 -->
+  <div id="friendList"></div>
+</div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('spark_token') || '';
+
+function tz() { return new Date().getTimezoneOffset(); }
+
+async function call(url, method, payload) {
+  let target = API + url;
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (method === 'GET') {
+    target += (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token);
+  } else {
+    opts.body = JSON.stringify({ ...(payload || {}), token });
+  }
+  const r = await fetch(target, opts);
+  return await r.json();
+}
+
+function setMsg(el, text, ok) {
+  el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+async function register() {
+  const msg = document.getElementById('authMsg');
+  const r = await call('/api/register', 'POST', {
+    username: document.getElementById('username').value,
+    name: document.getElementById('name').value,
+    password: document.getElementById('password').value,
+    tzOffsetMin: tz(),
+  });
+  if (r.token) { token = r.token; localStorage.setItem('spark_token', token); enter(r.user); }
+  else setMsg(msg, r.error, false);
+}
+async function login() {
+  const msg = document.getElementById('authMsg');
+  const r = await call('/api/login', 'POST', {
+    username: document.getElementById('username').value,
+    password: document.getElementById('password').value,
+  });
+  if (r.token) { token = r.token; localStorage.setItem('spark_token', token); enter(r.user); }
+  else setMsg(msg, r.error, false);
+}
+
+function enter(user) {
+  document.getElementById('authBox').style.display = 'none';
+  document.getElementById('mainBox').style.display = 'block';
+  document.getElementById('whoami').textContent = user.name;
+  document.getElementById('uname').textContent = '@' + user.username;
+  refresh();
+}
+
+async function checkin() {
+  const msg = document.getElementById('checkinMsg');
+  const r = await call('/api/checkin', 'POST', { tzOffsetMin: tz() });
+  if (r.ok) { setMsg(msg, '✅ 今天签到了，别忘明天继续！', true); refresh(); }
+  else setMsg(msg, r.error, false);
+}
+
+async function addFriend() {
+  const msg = document.getElementById('friendMsg');
+  const r = await call('/api/friend', 'POST', { username: document.getElementById('friendName').value });
+  setMsg(msg, r.ok ? '✅ 加好友成功' : r.error, !!r.ok);
+  if (r.ok) { document.getElementById('friendName').value = ''; refresh(); }
+}
+
+async function refresh() {
+  const r = await call('/api/me', 'GET');
+  if (r.error) { token = ''; localStorage.removeItem('spark_token'); location.reload(); return; }
+  const box = document.getElementById('friendList');
+  const todayDone = r.friends.some(f => f.todayChecked) || r.friends.length === 0;
+  box.innerHTML = '<div class="card"><div class="sub">你的好友 · 火花状态（共' + r.friends.length + '位）</div>' +
+    r.friends.map(f => {
+      let line;
+      if (f.broken) line = '<span class="broken">💔 已断签 · 重新开始</span>';
+      else if (f.sparkDays > 0) line = '<span class="spark-on">🔥 ' + f.sparkDays + ' 天</span> <span class="tag">持续共同打卡</span>';
+      else line = '<span class="spark-off">· 还没有火花 ·</span>';
+      return '<div class="friend"><div><div><b>' + f.name + '</b> <span class="tag">@' + f.username + '</span></div>' +
+        '<div class="tag" style="margin-top:2px">' + (f.todayChecked ? '你今天已签 ✅' : '今天还没签 ⏳') + '</div></div><div>' + line + '</div></div>';
+    }).join('') +
+    (r.friends.length === 0 ? '<div class="tag">还没有好友，加一个一起攒火花吧</div>' : '') +
+    '</div>';
+}
+
+// 已有 token 自动登录
+if (token) {
+  (async () => {
+    const r = await call('/api/me', 'GET');
+    if (r.user) enter(r.user); else { token=''; localStorage.removeItem('spark_token'); }
+  })();
+}
+</script>
+</body>
+</html>
