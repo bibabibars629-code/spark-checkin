@@ -1,0 +1,13 @@
+{
+  "name": "spark-checkin",
+  "version": "0.1.0",
+  "description": "好友互签 · 火花签到 MVP（零依赖，Node 内置 http + JSON 存储）",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}
