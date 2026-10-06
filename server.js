@@ -130,6 +130,19 @@ async function handle(req, res) {
       return json(res, 200, { ok: true });
     }
 
+    // 给好友发表情（互动/提醒）
+    if (req.method === 'POST' && p === '/api/emoji') {
+      const { friendId, emoji } = body;
+      if (!friendId) return json(res, 400, { error: '缺少好友' });
+      if (!emoji || String(emoji).length > 8) return json(res, 400, { error: '表情格式不对' });
+      const friend = await db.findById(friendId);
+      if (!friend) return json(res, 404, { error: '好友不存在' });
+      if (friend.id === meId) return json(res, 400, { error: '不能给自己发' });
+      if (!(await db.friendshipExists(meId, friend.id))) return json(res, 403, { error: '你们还不是好友' });
+      const ts = await db.addEmoji(meId, friend.id, String(emoji));
+      return json(res, 200, { ok: true, ts });
+    }
+
     // 我的信息 + 好友火花
     if (req.method === 'GET' && p === '/api/me') {
       const fships = await db.friendshipsOf(meId);
@@ -143,6 +156,8 @@ async function handle(req, res) {
           id: otherId, username: other.username, name: other.name,
           sparkDays: spark.days, lastCommon: spark.lastCommon, broken: spark.broken,
           todayChecked: await db.hasCheckin(meId, today),
+          otherTodayChecked: await db.hasCheckin(otherId, today),
+          emojis: await db.emojisBetween(meId, otherId, 6),
         });
       }
       return json(res, 200, { user: publicUser(me), friends });
