@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: spark-checkin
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DATABASE_URL
+        sync: false
