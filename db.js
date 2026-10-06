@@ -43,8 +43,12 @@ async function init() {
       id text PRIMARY KEY, ua text, ub text, created_at text)`);
     await pool.query(`CREATE TABLE IF NOT EXISTS checkins (
       user_id text, local_date text, PRIMARY KEY (user_id, local_date))`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS emoji_msg (
+      id text PRIMARY KEY, from_id text, to_id text, emoji text, created_at text)`);
   } else {
-    loadJson();
+    const d = loadJson();
+    if (!d.emojis) d.emojis = [];
+    saveJson();
   }
 }
 
@@ -156,10 +160,41 @@ async function checkinDates(userId) {
   return Object.keys(loadJson().checkins[userId] || {});
 }
 
+// ---------- 表情互动 ----------
+async function addEmoji(fromId, toId, emoji) {
+  const id = newId();
+  const ts = new Date().toISOString();
+  if (USE_PG) {
+    await pool.query(`INSERT INTO emoji_msg(id, from_id, to_id, emoji, created_at) VALUES($1,$2,$3,$4,$5)`,
+      [id, fromId, toId, emoji, ts]);
+  } else {
+    const d = loadJson();
+    if (!d.emojis) d.emojis = [];
+    d.emojis.push({ id, from: fromId, to: toId, emoji, createdAt: ts });
+    saveJson();
+  }
+  return ts;
+}
+async function emojisBetween(a, b, limit) {
+  if (USE_PG) {
+    const r = await pool.query(
+      `SELECT from_id, to_id, emoji, created_at FROM emoji_msg
+       WHERE (from_id=$1 AND to_id=$2) OR (from_id=$2 AND to_id=$1)
+       ORDER BY created_at DESC LIMIT $3`, [a, b, limit]);
+    return r.rows.map(x => ({ from: x.from_id, to: x.to_id, emoji: x.emoji, createdAt: x.created_at }));
+  }
+  return loadJson().emojis
+    .filter(m => (m.from === a && m.to === b) || (m.from === b && m.to === a))
+    .sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1))
+    .slice(0, limit)
+    .map(m => ({ from: m.from, to: m.to, emoji: m.emoji, createdAt: m.createdAt }));
+}
+
 module.exports = {
   USE_PG, init,
   createUser, findByUsername, findById, usernameExists,
   setToken, userIdByToken,
   addFriendship, friendshipExists, friendshipsOf,
   hasCheckin, addCheckin, checkinDates,
+  addEmoji, emojisBetween,
 };
